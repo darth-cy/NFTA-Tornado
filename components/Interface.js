@@ -4,11 +4,8 @@ import { ethers } from "ethers";
 
 const wc = require("../circuit/witness_calculator.js");
 
-// 0x3550327CB2B723b385855bBDf55df9a7e0B8cDd0
-// 0x680dACdc66218FDB04aF3D8a3aCbB70051CA1E29
-// 0x06DB9c2856Eab779B2794E98c769a2e6aDA4D4b6
-
 const tornadoAddress = "0x06DB9c2856Eab779B2794E98c769a2e6aDA4D4b6";
+
 const tornadoJSON = require("../json/Tornado.json");
 const tornadoABI = tornadoJSON.abi;
 const tornadoInterface = new ethers.utils.Interface(tornadoABI);
@@ -91,28 +88,15 @@ const Interface = () => {
             data: tornadoInterface.encodeFunctionData("deposit", [commitment])
         };
 
-        console.log(input);
-
         try{
             const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [tx] });
 
-            var receipt;
-            while(!receipt){
-                receipt = await window.ethereum.request({ method: "eth_getTransactionReceipt", params: [txHash] });
-                await new Promise((resolve, reject) => { setTimeout(resolve, 1000); });
-            }
-
-            const log = receipt.logs[0];
-            const decodedData = tornadoInterface.decodeEventLog("Deposit", log.data, log.topics);
-
             const proofElements = {
-                root: $u.BNToDecimal(decodedData.root),
                 nullifierHash: `${nullifierHash}`,
                 secret: secret,
                 nullifier: nullifier,
                 commitment: `${commitment}`,
-                hashPairings: decodedData.hashPairings.map((n) => ($u.BNToDecimal(n))),
-                hashDirections: decodedData.pairDirection
+                txHash: txHash
             };
 
             console.log(proofElements);
@@ -138,16 +122,23 @@ const Interface = () => {
         try{
             const proofString = textArea.value;
             const proofElements = JSON.parse(atob(proofString));
+
+            receipt = await window.ethereum.request({ method: "eth_getTransactionReceipt", params: [proofElements.txHash] });
+            if(!receipt){ throw "empty-receipt"; }
+
+            const log = receipt.logs[0];
+            const decodedData = tornadoInterface.decodeEventLog("Deposit", log.data, log.topics);
+
             const SnarkJS = window['snarkjs'];
 
             const proofInput = {
-                "root": proofElements.root,
+                "root": $u.BNToDecimal(decodedData.root),
                 "nullifierHash": proofElements.nullifierHash,
                 "recipient": $u.BNToDecimal(account.address),
                 "secret": $u.BN256ToBin(proofElements.secret).split(""),
                 "nullifier": $u.BN256ToBin(proofElements.nullifier).split(""),
-                "hashPairings": proofElements.hashPairings,
-                "hashDirections": proofElements.hashDirections
+                "hashPairings": decodedData.hashPairings.map((n) => ($u.BNToDecimal(n))),
+                "hashDirections": decodedData.pairDirection
             };
 
             const { proof, publicSignals } = await SnarkJS.groth16.fullProve(proofInput, "/withdraw.wasm", "/setup_final.zkey");
@@ -279,12 +270,12 @@ const Interface = () => {
                                             </div>
                                         ) : (
                                             <div>
-                                                <p className="text-secondary">Note: All deposits and withdrawals are of the same denomination of 1 ETH.</p>
+                                                <p className="text-secondary">Note: All deposits and withdrawals are of the same denomination of 0.1 ETH.</p>
                                                 <button 
                                                     className="btn btn-success" 
                                                     onClick={depositEther}
                                                     disabled={depositButtonState == ButtonState.Disabled}
-                                                ><span className="small">Deposit 1 ETH</span></button>
+                                                ><span className="small">Deposit 0.1 ETH</span></button>
                                             </div>
                                             
                                         )
@@ -309,7 +300,7 @@ const Interface = () => {
                                             </div>
                                         ) : (
                                             <div>
-                                                <p className="text-secondary">Note: All deposits and withdrawals are of the same denomination of 1 ETH.</p>
+                                                <p className="text-secondary">Note: All deposits and withdrawals are of the same denomination of 0.1 ETH.</p>
                                                 <div className="form-group">
                                                     <textarea className="form-control" style={{ resize: "none" }} ref={(ta) => { updateTextArea(ta); }}></textarea>
                                                 </div>
@@ -317,7 +308,7 @@ const Interface = () => {
                                                     className="btn btn-primary" 
                                                     onClick={withdraw}
                                                     disabled={withdrawButtonState == ButtonState.Disabled}
-                                                ><span className="small">Withdraw 1 ETH</span></button>
+                                                ><span className="small">Withdraw 0.1 ETH</span></button>
                                             </div>                  
                                         )
                                     }
