@@ -166,7 +166,7 @@ const Interface = () => {
                 data: callData
             };
             const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [tx] });
-            
+
             var receipt;
             while(!receipt){
                 receipt = await window.ethereum.request({ method: "eth_getTransactionReceipt", params: [txHash] });
@@ -279,12 +279,12 @@ const Interface = () => {
                                             </div>
                                         ) : (
                                             <div>
-                                                <p className="text-secondary">Note: All deposits and withdrawals are of the same denomination of 0.1 ETH.</p>
+                                                <p className="text-secondary">Note: All deposits and withdrawals are of the same denomination of 1 ETH.</p>
                                                 <button 
                                                     className="btn btn-success" 
                                                     onClick={depositEther}
                                                     disabled={depositButtonState == ButtonState.Disabled}
-                                                ><span className="small">Deposit 0.1 ETH</span></button>
+                                                ><span className="small">Deposit 1 ETH</span></button>
                                             </div>
                                             
                                         )
@@ -309,7 +309,7 @@ const Interface = () => {
                                             </div>
                                         ) : (
                                             <div>
-                                                <p className="text-secondary">Note: All deposits and withdrawals are of the same denomination of 0.1 ETH.</p>
+                                                <p className="text-secondary">Note: All deposits and withdrawals are of the same denomination of 1 ETH.</p>
                                                 <div className="form-group">
                                                     <textarea className="form-control" style={{ resize: "none" }} ref={(ta) => { updateTextArea(ta); }}></textarea>
                                                 </div>
